@@ -1,0 +1,270 @@
+# === Houdini Shading Setup Button ===
+# Contributors: Igor Kuchavo and Vladimir Scherbakov
+# Requires at least: Houdini 15
+# Tested up to: Houdini Core 17.5
+# Version: 1.0.0
+
+#searching of shading node
+mtlist = []
+allarr = hou.node('/').allSubChildren()
+alllist = []
+
+#list elements to str
+n = 0
+for i in allarr:
+    alllist.append(str(allarr[n].type().name()))
+    n += 1
+imat = []
+ii = 0
+for i in alllist:
+    if i == 'matnet':
+        imat.append(ii)
+    else:
+        pass
+    ii += 1
+        
+#choosing matnet pathes
+if len(imat)>1:
+    pathlist = []    
+    for k in range(len(imat)):
+        pathlist.append(str(allarr[imat[k]].path()))
+    w = hou.ui.selectFromList(pathlist, default_choices=(0,), message='The Network contains several Matnet nodes.\nPlease, choose path for creation MaterialBuilder node.', title='Path for ', column_header="Choose the place", clear_on_cancel=False)
+    pth = pathlist[w[0]]
+    #print 'more_than_one='+str(pth)
+elif len(imat)==1:
+    pth = str(allarr[imat[0]].path())
+    hou.ui.displayMessage('The MaterialBuilder was created in '+str(pth)+'.', buttons=("OK",))
+    #print 'one='+str(pth)
+else:
+    zero = hou.node('/shop/').createNode("matnet", "matnet1")
+    pth = str(zero.path())
+    hou.ui.displayMessage('The MaterialBuilder was created in /shop/matnet1.', buttons=("OK",))
+    #print 'zero='+str(pth)
+
+#creation 'MaterialBuilder' node
+matpath = hou.node(pth)
+matb = matpath.createNode("materialbuilder", "MaterialBuilder")
+matb.moveToGoodPosition()
+matb.setColor(hou.Color((0,0.5,0)))
+
+#creation inside node 'MaterialBuilder'
+ins1 = matb.children()[0].setPosition([-7.8553, 12.7789])
+ins2 = matb.children()[1].setPosition([-6.74507, -21.1468])
+ins3 = matb.children()[2].setPosition([20.6041, 5.24185])
+ins4 = matb.children()[3].setPosition([18.7843, -16.6387])
+ins5 = matb.children()[4].setPosition([29.5364, -4.84923])
+
+#texture nodes
+tex1 = matpath.children()[-1].createNode("texture::2.0", "diff_color")
+tex2 = matpath.children()[-1].createNode("texture::2.0", "roughness")
+tex3 = matpath.children()[-1].createNode("texture::2.0", "bump")
+tex4 = matpath.children()[-1].createNode("texture::2.0", "displace")
+tex5 = matpath.children()[-1].createNode("texture::2.0", "displace_extracted")
+
+tex1.setPosition([0.573625,0.220625])
+tex1.setColor(hou.Color((0.475,0.812,0.204)))
+tex1.setPosition([-2.39674, 12.9289])
+tex1.parm('defclrr').set('1')
+
+tex1.parm('map').set('$PRJ/assets/')
+tex1.insertParmGenerator('map',hou.vopParmGenType.Parameter,True)
+tex1.inputs()[2].parm('parmlabel').set('Diffuse Color Map')
+tex1.inputs()[2].parm('parmname').set('color_map')
+
+tex2.setPosition([-2.39674, 4.94185])
+tex2.setColor(hou.Color((0.475,0.812,0.204)))
+
+tex2.parm('map').set('$PRJ/assets/')
+tex2.insertParmGenerator('map',hou.vopParmGenType.Parameter,True)
+tex2.inputs()[2].parm('parmlabel').set('Roughness Map')
+tex2.inputs()[2].parm('parmname').set('roughness_map')
+
+tex3.setPosition([-2.39674, -3.28316])
+tex3.setColor(hou.Color((0.475,0.812,0.204)))
+
+tex3.parm('map').set('$PRJ/assets/')
+tex3.insertParmGenerator('map',hou.vopParmGenType.Parameter,True)
+tex3.inputs()[2].parm('parmlabel').set('Bump Map')
+tex3.inputs()[2].parm('parmname').set('bump_map')
+
+tex4.setPosition([-2.39674, -13.6826])
+tex4.setColor(hou.Color((0.475,0.812,0.204)))
+
+tex4.parm('map').set('$PRJ/assets/')
+tex4.insertParmGenerator('map',hou.vopParmGenType.Parameter,True)
+tex4.inputs()[2].parm('parmlabel').set('Displace Extracted Map')
+tex4.inputs()[2].parm('parmname').set('displace_map')
+
+tex5.setPosition([-2.39674, -21.1468])
+tex5.setColor(hou.Color((0.475,0.812,0.204)))
+
+tex5.parm('map').set('$PRJ/assets/')
+tex5.insertParmGenerator('map',hou.vopParmGenType.Parameter,True)
+tex5.inputs()[2].parm('parmlabel').set('Displace Map')
+tex5.inputs()[2].parm('parmname').set('displace_extr_map')
+
+#second level of nodes
+bind1 = matpath.children()[-1].createNode("bind", "bindColor")
+bind1.setPosition([2.02006, 15.637])
+bind1.setColor(hou.Color((0.6,0.6,1)))
+bind1.parm('parmname').set('color')
+bind1.parm('parmtype').set(19)
+bind1.parm('useasparmdefiner').set(1)
+bind1.parm('exportparm').set(2)
+bind1.setInput(0,tex1)
+
+bind2 = matpath.children()[-1].createNode("bind", "bindTest")
+bind2.setPosition([2.02006, 12.9289])
+bind2.setColor(hou.Color((0.98,0.275,0.275)))
+bind2.parm('parmname').set('test')
+bind2.parm('parmtype').set(19)
+bind2.parm('colordefr').set(1)
+bind2.parm('colordefb').set(1)
+bind2.parm('useasparmdefiner').set(1)
+bind2.parm('exportparm').set(2)
+bind2.setInput(0,tex1)
+
+vecgetcomp1 = matpath.children()[-1].createNode("vecgetcompon", "VecComp1")
+vecgetcomp1.setPosition([0.453887, 4.94185])
+vecgetcomp1.setInput(0,tex2)
+
+bind3 = matpath.children()[-1].createNode("bind", "bindRough")
+bind3.setPosition([3.65204, 3.35653])
+bind3.setColor(hou.Color((0.6,0.6,1)))
+bind3.parm('parmname').set('rough')
+bind3.parm('parmtype').set(19)
+bind3.parm('exportparm').set(2)
+bind3.parm('useasparmdefiner').set(1)
+bind3.setInput(0,vecgetcomp1)
+
+vecgetcomp2 = matpath.children()[-1].createNode("vecgetcompon", "VecComp2")
+vecgetcomp2.setPosition([0.453887, -3.28316])
+vecgetcomp2.setInput(0,tex3)
+
+mulconst1 = matpath.children()[-1].createNode("mulconst", "MultConst1")
+mulconst1.setPosition([2.96274, -3.28316])
+mulconst1.setInput(0,vecgetcomp2)
+
+bind3 = matpath.children()[-1].createNode("bind", "bindBump")
+bind3.setPosition([2.96274, -6.05672])
+bind3.setColor(hou.Color((0.6,0.6,1)))
+bind3.parm('parmname').set('bump')
+bind3.parm('parmtype').set(19)
+bind3.parm('useasparmdefiner').set(1)
+bind3.parm('exportparm').set(2)
+bind3.setInput(0,vecgetcomp2)
+
+disp1 = matpath.children()[-1].createNode("displacenml", "Displace1")
+disp1.setPosition([7.20112, -2.95352])
+disp1.setInput(2,mulconst1)
+
+vecgetcomp3 = matpath.children()[-1].createNode("vecgetcompon", "VecComp3")
+vecgetcomp3.setPosition([0.453887, -13.6826])
+vecgetcomp3.setInput(0,tex4)
+
+vecgetcomp4 = matpath.children()[-1].createNode("vecgetcompon", "VecComp4")
+vecgetcomp4.setPosition([0.453887, -21.1468])
+vecgetcomp4.setInput(0,tex5)
+
+mulconst1 = matpath.children()[-1].createNode("maddconst", "MultAddConst1")
+mulconst1.setPosition([3.40246, -21.1468])
+mulconst1.setInput(0,vecgetcomp4)
+
+princ = matpath.children()[-1].createNode("cg::principled::2.1", "Principled1")
+princ.setPosition([15.0327, 5.24185])
+princ.setInput(0,disp1)
+princ.setInput(3,tex1)
+princ.setInput(4,vecgetcomp1)
+
+add1 = matpath.children()[-1].createNode("add", "Add1")
+add1.setPosition([11.186, -16.9321])
+add1.setInput(0,vecgetcomp3)
+add1.setInput(1,mulconst1)
+
+disp2 = matpath.children()[-1].createNode("displacenml", "Displace2")
+disp2.setPosition([15.3262, -16.6387])
+disp2.setInput(2,add1)
+
+alb = matpath.children()[-1].createNode("albedo", "Albedo")
+alb.setPosition([20.6041, 9.63238])
+alb.setInput(0,princ)
+
+bind4 = matpath.children()[-1].createNode("bind", "bindAlbedo")
+bind4.setPosition([24.5571, 9.63238])
+bind4.setColor(hou.Color((0.6,0.6,1)))
+bind4.parm('parmname').set('albedo')
+bind4.parm('overridetype').set(1)
+bind4.parm('parmtype').set(19)
+bind4.parm('useasparmdefiner').set(1)
+bind4.parm('exportparm').set(2)
+bind4.setInput(0,alb)
+
+matpath.children()[-1].children()[2].setInput(4,princ)
+matpath.children()[-1].children()[3].setInput(0,disp2)
+matpath.children()[-1].children()[3].setInput(1,disp2,1)
+
+#properties node with spare parameters
+prop = matpath.children()[-1].createNode("properties", "Properties")
+prop.setPosition([24.1745, -5.0262])
+
+bumpDataTags = {'spare_category':'Shading', 'mantra_name':'bumpraydisplace', 'mantra_class':'object'}
+dispBoundDataTags = {'spare_category':'Shading', 'mantra_name':'displacebound', 'mantra_class':'object'}
+trueDispDataTags = {'spare_category':'Shading', 'mantra_name':'truedisplace', 'mantra_class':'object'}
+renderSubdDataTags = {'spare_category':'Geometry', 'mantra_name':'rendersubd', 'mantra_class':'object'}
+subdStyleDataTags = {'spare_category':'Geometry', 'mantra_name':'subdstyle', 'mantra_class':'object'}
+subdGroupDataTags = {'spare_category':'Geometry', 'mantra_name':'subdgroup', 'mantra_class':'object'}
+osdQDataTags = {'spare_category':'Geometry', 'mantra_name':'osd_quality', 'mantra_class':'object'}
+
+pg = prop.parmTemplateGroup()
+pf1 = hou.FolderParmTemplate("folder", "Shading")
+pf2 = hou.FolderParmTemplate("folder", "Geometry")
+pf1.addParmTemplate(hou.ToggleParmTemplate("vm_truedisplace", "True Displacement", default_value=True, tags=trueDispDataTags, help="When running displacement shaders, whether the VEX variable P is actually moved (true displacement) or whether bump mapping will be performed. (object:truedisplace)"))
+pf1.addParmTemplate(hou.FloatParmTemplate("vm_displacebound", "Displacement Bound", 1, default_value=([0.05]), min=0, max=10, tags=dispBoundDataTags, help="None (object:displacebound)"))
+pf1.addParmTemplate(hou.ToggleParmTemplate("vm_bumpraydisplace", "Add Bump To Ray Traced Displacements", default_value=False, disable_when="{ vm_truedisplace == 0 }", tags = bumpDataTags, help="When true displacements is enabled, use the displacement as a bump map in addition to displacing the geometry. Enabling this option can increase apparent detail without incurring the cost of an increase in shading quality. Essentially, mantra is using true displacements up to the shading quality, and then adding the remaining detail by modifying the shading normal N. (object:bumpraydisplace)"))
+pf2.addParmTemplate(hou.ToggleParmTemplate("vm_rendersubd", "Render Polygons As Subdivision (Mantra)", default_value=False, tags=renderSubdDataTags, help="Render polygons as a subdivision surface. The creaseweight attribute is used to perform linear creasing. This attribute may appear on points, vertices or primitives. (object:rendersubd)"))
+pf2.addParmTemplate(hou.StringParmTemplate('vm_subdstyle', 'Subdivision Style', 1, default_value=(['mantra_catclark']), disable_when='{ vm_rendersubd == 0 }', tags=subdStyleDataTags, menu_items=('mantra_catclark', 'osd_catclark'), menu_labels=('Mantra Catmull-Clark','OpenSubdiv Catmull-Clark'), help='The algorithm used to render subdivision surfaces.  Currently, this can be either mantra_catclark or osd_catclark. (object:subdstyle)'))
+pf2.addParmTemplate(hou.StringParmTemplate('vm_subdgroup', 'Subdivision Group', 1, disable_when='{ vm_rendersubd == 0 }', tags=subdGroupDataTags, help='A primitive group of polygons which should be rendered as a subdivision surface.  This is only effective if vm_rendersubd is enabled. (object:subdgroup)'))
+pf2.addParmTemplate(hou.FloatParmTemplate('vm_osd_quality', 'Open Subdiv Quality', 1, default_value=([1]), min=0, max=10, tags=osdQDataTags, disable_when='{ vm_rendersubd == 0 vm_subdstyle != osd_catclark }', help='The dicing quality when rendering subdivision surfaces as osd_catclark.  This value is multiplied by the shading quality and shading factor to determine the number of refinement levels for the surface. (object:osd_quality)'))
+pg.append(pf1)
+pg.append(pf2)
+prop.setParmTemplateGroup(pg)
+
+#masks nodes
+matpath.children()[-1].children()[4].setInput(1,prop)
+matpath.children()[-1].children()[4].setInput(2,matpath.children()[-1].children()[3])
+
+bind5 = matpath.children()[-1].createNode("bind", "M1")
+bind5.setPosition([38.1373, -4.11345])
+bind5.setColor(hou.Color((0.89,0.412,0.761)))
+bind5.parm('parmname').set('m1')
+bind5.parm('parmtype').set(19)
+bind5.parm('colordefr').set(1)
+bind5.parm('useasparmdefiner').set(1)
+bind5.parm('exportparm').set(2)
+
+bind6 = matpath.children()[-1].createNode("bind", "M1")
+bind6.setPosition([38.1373, -5.64345])
+bind6.setColor(hou.Color((0.89,0.412,0.761)))
+bind6.parm('parmname').set('m1')
+bind6.parm('parmtype').set(19)
+bind6.parm('colordefr').set(1)
+bind6.parm('useasparmdefiner').set(1)
+bind6.parm('exportparm').set(2)
+
+bind7 = matpath.children()[-1].createNode("bind", "M1")
+bind7.setPosition([38.1373, -7.17345])
+bind7.setColor(hou.Color((0.89,0.412,0.761)))
+bind7.parm('parmname').set('m1')
+bind7.parm('parmtype').set(19)
+bind7.parm('colordefr').set(1)
+bind7.parm('useasparmdefiner').set(1)
+bind7.parm('exportparm').set(2)
+
+netbox = matb.createNetworkBox()
+netbox.setColor(hou.Color((0.38,0.408,0.553)))
+netbox.setPosition([36.4813, -8.82956])
+netbox.setSize([4.16259, 6.23285])
+netbox.setComment("MASKS")
+netbox.addItem(bind5)
+netbox.addItem(bind6)
+netbox.addItem(bind7)
