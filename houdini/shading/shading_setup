@@ -1,4 +1,5 @@
 # === Houdini Shading Setup Button ===
+# The script create MaterialBuilder node in current matnet's (or create a new), which contains network for shading pipeline.
 # Contributors: Igor Kuchavo and Vladimir Scherbakov
 # Requires at least: Houdini 15
 # Tested up to: Houdini Core 17.5
